@@ -9,5 +9,3 @@ serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 openssl = { version = "0.10", features = ["vendored"] }
 rand = "0.8"
-pbkdf2 = "0.12"
-sha2 = "0.10"
