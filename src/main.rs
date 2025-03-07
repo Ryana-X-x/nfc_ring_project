@@ -118,7 +118,7 @@ async fn main() -> std::io::Result<()> {
             .route("/store", web::post().to(store_data))
             .route("/retrieve/{id}", web::get().to(retrieve_data))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }
