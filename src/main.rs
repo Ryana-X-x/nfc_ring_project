@@ -93,7 +93,7 @@ async fn store_data(data: web::Json<StoreData>, state: web::Data<AppState>) -> i
     HttpResponse::Ok().json(ResponseData { message: format!("Data stored for ID: {}", data.id) })
 }
 
-// Retrieve data with HTML formatting
+// Retrieve data with responsive HTML formatting
 async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, state: web::Data<AppState>) -> impl Responder {
     let medical_data = state.medical_data.lock().unwrap();
     if let Some(encrypted_data) = medical_data.get(&id.into_inner()) {
@@ -103,6 +103,7 @@ async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, 
                 <html>
                 <head>
                     <title>Decrypted Data</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
                         body {{
                             font-family: Arial, sans-serif;
@@ -113,10 +114,21 @@ async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, 
                             padding: 10px;
                             border-radius: 5px;
                             border: 1px solid #ccc;
+                            overflow-x: auto;
+                            word-wrap: break-word;
                         }}
                         pre {{
+                            font-size: 1.2em;
                             white-space: pre-wrap;
                             word-wrap: break-word;
+                        }}
+                        @media (max-width: 600px) {{
+                            body {{
+                                font-size: 1.2em;
+                            }}
+                            pre {{
+                                font-size: 1em;
+                            }}
                         }}
                     </style>
                 </head>
@@ -142,13 +154,8 @@ async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, 
     }
 }
 
-use std::env;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string()); // Default to 8080 locally
-    let addr = format!("0.0.0.0:{}", port);
-
     let data = web::Data::new(AppState {
         medical_data: Mutex::new(HashMap::new()),
     });
@@ -159,8 +166,7 @@ async fn main() -> std::io::Result<()> {
             .route("/store", web::post().to(store_data))
             .route("/retrieve/{id}", web::get().to(retrieve_data))
     })
-    .bind(addr)?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }
-
