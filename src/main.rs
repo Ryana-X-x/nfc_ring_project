@@ -93,12 +93,48 @@ async fn store_data(data: web::Json<StoreData>, state: web::Data<AppState>) -> i
     HttpResponse::Ok().json(ResponseData { message: format!("Data stored for ID: {}", data.id) })
 }
 
-// Retrieve data
+// Retrieve data with HTML formatting
 async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, state: web::Data<AppState>) -> impl Responder {
     let medical_data = state.medical_data.lock().unwrap();
     if let Some(encrypted_data) = medical_data.get(&id.into_inner()) {
         match decrypt(encrypted_data, &query.key) {
-            Some(decrypted_data) => HttpResponse::Ok().json(ResponseData { message: decrypted_data }),
+            Some(decrypted_data) => HttpResponse::Ok().content_type("text/html").body(format!(r#"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Decrypted Data</title>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                        }}
+                        .json-container {{
+                            background-color: #f4f4f4;
+                            padding: 10px;
+                            border-radius: 5px;
+                            border: 1px solid #ccc;
+                        }}
+                        pre {{
+                            white-space: pre-wrap;
+                            word-wrap: break-word;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h1>Decrypted Data</h1>
+                    <div class="json-container">
+                        <pre id="json-data">{}</pre>
+                    </div>
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {{
+                            const jsonData = document.getElementById("json-data");
+                            const jsonString = JSON.stringify(JSON.parse(jsonData.textContent), null, 2);
+                            jsonData.textContent = jsonString;
+                        }});
+                    </script>
+                </body>
+                </html>
+            "#, decrypted_data)),
             None => HttpResponse::Unauthorized().json(ResponseData { message: "Decryption failed".to_string() }),
         }
     } else {
