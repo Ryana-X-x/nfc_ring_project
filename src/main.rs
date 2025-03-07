@@ -106,8 +106,13 @@ async fn retrieve_data(id: web::Path<String>, query: web::Query<RetrieveQuery>, 
     }
 }
 
+use std::env;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string()); // Default to 8080 locally
+    let addr = format!("0.0.0.0:{}", port);
+
     let data = web::Data::new(AppState {
         medical_data: Mutex::new(HashMap::new()),
     });
@@ -118,7 +123,8 @@ async fn main() -> std::io::Result<()> {
             .route("/store", web::post().to(store_data))
             .route("/retrieve/{id}", web::get().to(retrieve_data))
     })
-    .bind("0.0.0.0:8080")?
+    .bind(addr)?
     .run()
     .await
 }
+
